@@ -1,11 +1,22 @@
 use glam::Vec2;
 use u64_id::U64Id;
 
+#[cfg(target_arch = "wasm32")]
+pub mod wasmfmod;
+
+// This is the trick to change between libfmod and wasmfmod just with flags
+pub mod fmod {
+    #[cfg(target_arch = "wasm32")]
+    pub use crate::wasmfmod::*;
+    #[cfg(target_arch = "x86_64")]
+    pub use libfmod::*;
+}
+
 type AnyResult<T = ()> = color_eyre::Result<T>;
 
 #[derive(Debug)]
 pub struct AudioEngine {
-    handle: libfmod::Studio,
+    handle: fmod::Studio,
     event_names: Vec<String>,
     asset_id: Option<U64Id>,
     listener_position: Vec2,
@@ -15,16 +26,16 @@ pub struct AudioEngine {
 impl AudioEngine {
     /// Creates a new AudioEngine, initializing FMOD.
     pub fn new(live_update: bool) -> AnyResult<Self> {
-        let studio = libfmod::Studio::create()?;
+        let studio = fmod::Studio::create()?;
 
         let studio_flags = if live_update {
-            libfmod::StudioInit::NORMAL | libfmod::StudioInit::LIVEUPDATE
+            fmod::StudioInit::NORMAL | fmod::StudioInit::LIVEUPDATE
         } else {
-            libfmod::StudioInit::NORMAL
+            fmod::StudioInit::NORMAL
         };
 
         studio
-            .initialize(1024, studio_flags, libfmod::Init::RIGHTHANDED_3D, None)
+            .initialize(1024, studio_flags, fmod::Init::RIGHTHANDED_3D, None)
             .expect("Failed to initialize FMOD studio");
 
         Ok(Self {
@@ -42,7 +53,7 @@ impl AudioEngine {
         for buffer in buffers {
             let bank = self
                 .handle
-                .load_bank_memory(buffer, libfmod::LoadBank::NORMAL)?;
+                .load_bank_memory(buffer, fmod::LoadBank::NORMAL)?;
 
             for maybe_name in bank
                 .get_event_list(bank.get_event_count()?)?
@@ -76,8 +87,8 @@ impl AudioEngine {
     /// Creates a given event instance.
     ///
     /// Note that this will *not* actually play the given EventInstance at all.
-    /// You'll need to run [`EventInstance::start`](libfmod::EventInstance::start),
-    /// and should almost certainly also run [`EventInstance::release`](libfmod::EventInstance::release).
+    /// You'll need to run [`EventInstance::start`](fmod::EventInstance::start),
+    /// and should almost certainly also run [`EventInstance::release`](fmod::EventInstance::release).
     ///
     /// You can provide an `&str`, but you are *highly* encouraged to make your own Enum which uses `AsRef` to convert
     /// between the types required.
@@ -228,11 +239,11 @@ impl AudioEngine {
     pub fn set_listener_position_velocity(&mut self, position: Vec2, velocity: Vec2) -> AnyResult {
         self.handle.set_listener_attributes(
             0,
-            libfmod::Attributes3d {
-                position: libfmod::Vector::new(position.x, position.y, 0.0),
-                velocity: libfmod::Vector::new(velocity.x, velocity.y, 0.0),
-                forward: libfmod::Vector::new(0.0, 1.0, 0.0),
-                up: libfmod::Vector::new(0.0, 0.0, 1.0),
+            fmod::Attributes3d {
+                position: fmod::Vector::new(position.x, position.y, 0.0),
+                velocity: fmod::Vector::new(velocity.x, velocity.y, 0.0),
+                forward: fmod::Vector::new(0.0, 1.0, 0.0),
+                up: fmod::Vector::new(0.0, 0.0, 1.0),
             },
             None,
         )?;
@@ -294,13 +305,13 @@ impl AudioEngine {
 /// We have not bound everything that FMod offers, so to get to the underlying functions,
 /// you can run [`EventInstance::inner`].
 #[derive(Debug)]
-pub struct EventInstance(libfmod::EventInstance);
+pub struct EventInstance(fmod::EventInstance);
 
 impl EventInstance {
-    /// Gives access to the inner [`libfmod::EventInstance`].
+    /// Gives access to the inner [`fmod::EventInstance`].
     /// This is a kind of get-out-of-jail-free card, since we haven't fully
     /// bound the entire FMOD API ourselves yet, so you might need something here.
-    pub fn inner(&self) -> &libfmod::EventInstance {
+    pub fn inner(&self) -> &fmod::EventInstance {
         &self.0
     }
 
@@ -408,11 +419,11 @@ impl EventInstance {
 
     /// Sets the position and velocity on this event instance.
     pub fn set_position_velocity(&self, position: Vec2, velocity: Vec2) -> AnyResult {
-        self.0.set_3d_attributes(libfmod::Attributes3d {
-            position: libfmod::Vector::new(position.x, position.y, 0.0),
-            velocity: libfmod::Vector::new(velocity.x, velocity.y, 0.0),
-            forward: libfmod::Vector::new(0.0, 1.0, 0.0),
-            up: libfmod::Vector::new(0.0, 0.0, 1.0),
+        self.0.set_3d_attributes(fmod::Attributes3d {
+            position: fmod::Vector::new(position.x, position.y, 0.0),
+            velocity: fmod::Vector::new(velocity.x, velocity.y, 0.0),
+            forward: fmod::Vector::new(0.0, 1.0, 0.0),
+            up: fmod::Vector::new(0.0, 0.0, 1.0),
         })?;
 
         Ok(())
@@ -471,14 +482,14 @@ impl EventInstance {
     ///
     /// If you need to stop immediately, use [`EventInstance::stop_immediately`].
     pub fn stop(&self) -> AnyResult {
-        self.0.stop(libfmod::StopMode::AllowFadeout)?;
+        self.0.stop(fmod::StopMode::AllowFadeout)?;
 
         Ok(())
     }
 
     /// Stops playback immediately. If you need to stop with a fadeout, use [`EventInstance::stop`].
     pub fn stop_immediately(&self) -> AnyResult {
-        self.0.stop(libfmod::StopMode::Immediate)?;
+        self.0.stop(fmod::StopMode::Immediate)?;
 
         Ok(())
     }
@@ -528,14 +539,14 @@ pub enum PlaybackState {
     Stopping,
 }
 
-impl From<libfmod::PlaybackState> for PlaybackState {
-    fn from(value: libfmod::PlaybackState) -> Self {
+impl From<fmod::PlaybackState> for PlaybackState {
+    fn from(value: fmod::PlaybackState) -> Self {
         match value {
-            libfmod::PlaybackState::Playing => PlaybackState::Playing,
-            libfmod::PlaybackState::Sustaining => PlaybackState::Sustaining,
-            libfmod::PlaybackState::Stopped => PlaybackState::Stopped,
-            libfmod::PlaybackState::Starting => PlaybackState::Starting,
-            libfmod::PlaybackState::Stopping => PlaybackState::Stopping,
+            fmod::PlaybackState::Playing => PlaybackState::Playing,
+            fmod::PlaybackState::Sustaining => PlaybackState::Sustaining,
+            fmod::PlaybackState::Stopped => PlaybackState::Stopped,
+            fmod::PlaybackState::Starting => PlaybackState::Starting,
+            fmod::PlaybackState::Stopping => PlaybackState::Stopping,
         }
     }
 }
@@ -563,15 +574,15 @@ pub enum EventProperty {
     Cooldown,
 }
 
-impl From<EventProperty> for libfmod::EventProperty {
+impl From<EventProperty> for fmod::EventProperty {
     fn from(value: EventProperty) -> Self {
         match value {
-            EventProperty::ChannelPriority => libfmod::EventProperty::ChannelPriority,
-            EventProperty::ScheduleDelay => libfmod::EventProperty::ScheduleDelay,
-            EventProperty::ScheduleLookahead => libfmod::EventProperty::ScheduleLookahead,
-            EventProperty::MinimumDistance => libfmod::EventProperty::MinimumDistance,
-            EventProperty::MaximumDistance => libfmod::EventProperty::MaximumDistance,
-            EventProperty::Cooldown => libfmod::EventProperty::Cooldown,
+            EventProperty::ChannelPriority => fmod::EventProperty::ChannelPriority,
+            EventProperty::ScheduleDelay => fmod::EventProperty::ScheduleDelay,
+            EventProperty::ScheduleLookahead => fmod::EventProperty::ScheduleLookahead,
+            EventProperty::MinimumDistance => fmod::EventProperty::MinimumDistance,
+            EventProperty::MaximumDistance => fmod::EventProperty::MaximumDistance,
+            EventProperty::Cooldown => fmod::EventProperty::Cooldown,
         }
     }
 }

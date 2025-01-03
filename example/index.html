@@ -1,0 +1,36 @@
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <title>Sample</title>
+    <style>
+        html,
+        body,
+        canvas {
+            margin: 0px;
+            padding: 0px;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            position: absolute;
+            background: black;
+            z-index: 0;
+        }
+    </style>
+</head>
+
+<body>
+    <canvas id="glcanvas" tabindex='1'></canvas>
+    <script src="third_party_deps/fmod.js"></script>
+    <script src="third_party_deps/fmodstudio.js"></script>
+	<script src="deps/fmod-test-bed.js"></script>
+	<script>
+		async function run() {
+			await wasm_bindgen();
+		}
+		run();
+	</script>
+	<script src="deps/wasmfmod.js"></script>
+</body>
+
+</html>
