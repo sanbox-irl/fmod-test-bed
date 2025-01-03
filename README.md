@@ -10,9 +10,11 @@ example.
 
 # How to run the example
 *NOTE:* I only tried it on Windows as that's what I have access to (my PC).
-*NOTE:* I also used FMOD Studio's example for the purposes of testing this.
+*NOTE:* I also used FMOD Studio's Example Project, shown in the FMod Studio "Start Project" pane
+for the purposes of testing this.
 
-- Put FMOD assets you want in `/resources`.
+- Put FMOD assets you want in `/resources` -- you can see the `include_bytes!` calls in `main.rs` which
+  show which Bank files to place there.
 - Update `/src/main.rs` with assets added.
 - Get FMOD's dev libraries as described as here:
   https://github.com/lebedec/libfmod?tab=readme-ov-file#fmod-development-libraries
