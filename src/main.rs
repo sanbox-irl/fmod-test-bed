@@ -11,7 +11,7 @@ macro_rules! agnostic_print {
     ($($t:tt)*) => (web_sys::console::log_1(&format_args!($($t)*).to_string().into()))
 }
 
-#[cfg(target_arch = "x86_64")]
+#[cfg(not(target_arch = "wasm32"))]
 macro_rules! agnostic_print {
     ($($t:tt)*) => (println!("{}", format_args!($($t)*)))
 }
@@ -66,7 +66,7 @@ struct Game {
 
 // Native loop. Uses Rc<RefCell>> because tick has to, because of the closure
 // above in wasm main.
-#[cfg(target_arch = "x86_64")]
+#[cfg(not(target_arch = "wasm32"))]
 pub fn main() {
     let engine = Rc::new(RefCell::new(setup()));
 

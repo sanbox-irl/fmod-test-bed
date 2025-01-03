@@ -8,7 +8,7 @@ pub mod wasmfmod;
 pub mod fmod {
     #[cfg(target_arch = "wasm32")]
     pub use crate::wasmfmod::*;
-    #[cfg(target_arch = "x86_64")]
+    #[cfg(not(target_arch = "wasm32"))]
     pub use libfmod::*;
 }
 

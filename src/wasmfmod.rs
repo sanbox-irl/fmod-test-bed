@@ -1,10 +1,10 @@
-///
-/// This is libfmod replacement for WASM with limited functionality, where it
-/// is almost 1:1. Anything that includes opaque JsValue is not Copy, so that's
-/// one difference between libfmod and this. JsValue is actually a 32bit number
-/// , so this can be solved by transmuting I read somewhere. But, I kept it as
-/// like this for now. If lack of Copy is too much of an issue, it is a quick
-/// change, at least feels like one.
+//! This is libfmod replacement for WASM with limited functionality, where it
+//! is almost 1:1. Anything that includes opaque JsValue is not Copy, so that's
+//! one difference between libfmod and this. JsValue is actually a 32bit number
+//! , so this can be solved by transmuting I read somewhere. But, I kept it as
+//! like this for now. If lack of Copy is too much of an issue, it is a quick
+//! change, at least feels like one.
+
 use std::{
     ffi::{c_void, IntoStringError, NulError},
     fmt::{Display, Formatter},
@@ -29,6 +29,7 @@ macro_rules! err_fmod {
 pub struct Studio {
     opaque: JsValue,
 }
+
 impl Studio {
     pub fn create() -> Result<Self, Error> {
         let result = Studio_System_Create();

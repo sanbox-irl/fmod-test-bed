@@ -38,9 +38,9 @@ example.
 
 # Batch script I used as an example to recompile & execute WASM stuff
 ```batch
-cargo build --target wasm32-unknown-unknown
-wasm-bindgen target\wasm32-unknown-unknown\debug\fmod-test-bed.wasm --target no-modules --out-dir example/deps
-copy target\wasm32-unknown-unknown\debug\fmod-test-bed.wasm example\deps\fmod-test-bed.wasm
-copy wasm\wasmfmod.js example\deps\wasmfmod.js
+cargo build --target wasm32-unknown-unknown --release
+wasm-bindgen target/wasm32-unknown-unknown/release/fmod-test-bed.wasm --target no-modules --out-dir example/deps
+cp target/wasm32-unknown-unknown/release/fmod-test-bed.wasm example/deps/fmod-test-bed.wasm
+cp wasm/wasmfmod.js example/deps/wasmfmod.js
 basic-http-server example
 ```
